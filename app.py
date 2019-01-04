@@ -21,6 +21,7 @@ def search():
 
     location_args = args.pop('location', None)
     if location_args is not None:
+        location_list = [word.strip() for word in location_args.split(',')]
         pass
 
     from_args = args.pop('from', None)
