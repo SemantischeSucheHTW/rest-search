@@ -4,10 +4,15 @@ from flask import request
 
 app = Flask(__name__)
 
+index_title = {}
+index_location = {}
+index_time = {}
+index_text = {}
+
 
 @app.route('/search', methods=['GET'])
 def get_all_reports():
-    filter_params = {}
+    pass
 
 
 if __name__ == '__main__':
