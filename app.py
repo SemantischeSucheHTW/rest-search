@@ -8,6 +8,7 @@ import logging
 from indexupdater.indexdao.ortsIndexdao import OrtsIndexDao
 from indexupdater.indexdao.zeitIndexdao import ZeitIndexDao
 from textprocessor.textdao.mongodbdao import MongoDBTextDao
+from textprocessor.indexdao.mongodbwortindexdao import MongoDBWortIndexDao
 
 config_ortindex = {}
 config_ortindex['host'] = "abteilung6.com"
@@ -26,6 +27,12 @@ config_textindex['host'] = "abteilung6.com"
 config_textindex['port'] = 27017  # mongodb default port
 config_textindex['db'] = 'semantische'  # which database
 config_textindex['pagedetails_collection'] = 'pagedetails'  # which collection
+
+config_wortindex = {}
+config_wortindex['host'] = "abteilung6.com"
+config_wortindex['port'] = 27017  # mongodb default port
+config_wortindex['db'] = 'semantische'  # which database
+config_wortindex['wordindex_collection'] = 'wortindexe'  # which collection
 
 # create logger
 logger = logging.getLogger('rest-search')
@@ -48,7 +55,8 @@ app = Flask(__name__)
 
 ortdao = OrtsIndexDao(config_ortindex)
 zeitdao = ZeitIndexDao(config_zeitindex)
-wortindexdao = MongoDBTextDao(config_textindex)
+textdao = MongoDBTextDao(config_textindex)
+wortdao = MongoDBWortIndexDao(config_wortindex)
 
 os.environ['HADOOP_HOME'] = "C:\\hadoop"
 
@@ -64,6 +72,7 @@ sc = SparkContext(conf=conf)
 def search():
     time_urls = []
     location_urls = []
+    word_urls = []
 
     args = request.args.to_dict()
     logger.info("New Request with Arguments: " + str(args))
@@ -106,11 +115,17 @@ def search():
                 logger.info("Append URL " + str(url) + " for FROM " + from_date)
                 time_urls.append((url[0], url[0]))
 
-    '''
-    text_args = args.pop('text', None)
-    if text_args is not None:
-        pass
-    '''
+
+    word_args = args.pop('text', None)
+    if word_args is not None:
+        word_list = [word.strip() for word in word_args.split(',')]
+        for word in word_list:
+            urls, weight = wortdao.getUrlsAndCountsfromKey(word)
+            logger.info("word URLs found: " + str(urls))
+            for url in urls:
+                logger.info("Append URL " + str(url) + " for word " + word)
+                word_urls.append((url[0], url[0]))
+
 
     rdd_locations = sc.parallelize(location_urls)
     rdd_time = sc.parallelize(time_urls)
