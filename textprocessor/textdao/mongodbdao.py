@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-from textdao.textdao import TextDao
+from textprocessor.textdao.textdao import TextDao
 
 
 class MongoDBTextDao(TextDao):
