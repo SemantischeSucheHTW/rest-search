@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
-from pyspark import SparkConf, SparkContext
+from pyspark import SparkConf, SparkContext  # 2.3.2
 import os
 import logging
 
