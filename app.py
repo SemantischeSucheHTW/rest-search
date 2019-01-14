@@ -68,7 +68,7 @@ conf = (SparkConf()
 sc = SparkContext(conf=conf)
 
 
-@app.route('/search', methods=['GET'])
+@app.route('/reports', methods=['GET'])
 def search():
     time_urls = []
     location_urls = []
@@ -83,7 +83,7 @@ def search():
         pass
     '''
 
-    location_args = args.pop('location', None)
+    location_args = args.pop('locations', None)
 
     if location_args is not None:
         location_list = [word.strip() for word in location_args.split(',')]
@@ -116,7 +116,7 @@ def search():
                 time_urls.append((url[0], url[0]))
 
 
-    word_args = args.pop('text', None)
+    word_args = args.pop('words', None)
     if word_args is not None:
         word_list = [word.strip() for word in word_args.split(',')]
         for word in word_list:
