@@ -1,4 +1,4 @@
-from indexdao import IndexDao
+from indexupdater.indexdao.indexdao import IndexDao
 from pymongo import MongoClient
 
 
