@@ -115,7 +115,6 @@ def search():
                 logger.info("Append URL " + str(url) + " for FROM " + from_date)
                 time_urls.append((url[0], url[0]))
 
-
     word_args = args.pop('words', None)
     if word_args is not None:
         word_list = [word.strip() for word in word_args.split(',')]
@@ -126,11 +125,12 @@ def search():
                 logger.info("Append URL " + str(url) + " for word " + word)
                 word_urls.append((url[0], url[0]))
 
-
     rdd_locations = sc.parallelize(location_urls)
     rdd_time = sc.parallelize(time_urls)
     rdd_intersect = rdd_locations.intersection(rdd_time).collect()
     logger.info("Response " + str(rdd_intersect))
+
+    # rdd_url_and_text = rdd_intersect.map(lambda x: (x, textdao.getText(x)))
 
     return jsonify(rdd_intersect)
 
