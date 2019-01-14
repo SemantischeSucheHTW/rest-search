@@ -42,7 +42,7 @@ app = Flask(__name__)
 ortdao = OrtsIndexDao(config_ortindex)
 zeitdao = ZeitIndexDao(config_zeitindex)
 
-os.environ['HADOOP_HOME'] = "C:\\hadoop"
+#os.environ['HADOOP_HOME'] = "C:\\hadoop"
 
 conf = (SparkConf()
         .setMaster("local")
@@ -91,11 +91,12 @@ def search():
 
     elif from_args is not None and to_args is None:
         from_list = [word.strip() for word in from_args.split(',')]
-        urls, weight = zeitdao.getUrlfromKey(from_list[0])
-        logger.info("TO URLs found: " + str(urls))
-        for url in urls:
-            logger.info("Append URL " + str(urls) + " for FROM " + from_list[0])
-            time_urls.append((url[0], url[0]))
+        for from_date in from_list:
+            urls, weight = zeitdao.getUrlfromKey(from_date)
+            logger.info("TO URLs found: " + str(urls))
+            for url in urls:
+                logger.info("Append URL " + str(url) + " for FROM " + from_date)
+                time_urls.append((url[0], url[0]))
 
     '''
     text_args = args.pop('text', None)
