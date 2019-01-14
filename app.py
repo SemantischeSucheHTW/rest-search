@@ -5,27 +5,27 @@ from pyspark import SparkConf, SparkContext
 import os
 import logging
 
-from indexdao.ortsIndexdao import OrtsIndexDao
-from indexdao.zeitIndexdao import ZeitIndexDao
-from textdao.mongodbdao import MongoDBTextDao
+from indexupdater.indexdao.ortsIndexdao import OrtsIndexDao
+from indexupdater.indexdao.zeitIndexdao import ZeitIndexDao
+from textprocessor.textdao.mongodbdao import MongoDBTextDao
 
 config_ortindex = {}
 config_ortindex['host'] = "abteilung6.com"
 config_ortindex['port'] = 27017
 config_ortindex['db'] = 'semantische'
-config_ortindex['collection'] = 'ortsindexe'
+config_ortindex['ortsindex_collection'] = 'ortsindexe'
 
 config_zeitindex = {}
 config_zeitindex['host'] = "abteilung6.com"
 config_zeitindex['port'] = 27017  # mongodb default port
 config_zeitindex['db'] = 'semantische'  # which database
-config_zeitindex['collection'] = 'zeitindexe'  # which collection
+config_zeitindex['zeitindex_collection'] = 'zeitindexe'  # which collection
 
 config_textindex = {}
 config_textindex['host'] = "abteilung6.com"
 config_textindex['port'] = 27017  # mongodb default port
 config_textindex['db'] = 'semantische'  # which database
-config_textindex['collection'] = 'pagedetails'  # which collection
+config_textindex['pagedetails_collection'] = 'pagedetails'  # which collection
 
 # create logger
 logger = logging.getLogger('rest-search')
