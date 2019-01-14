@@ -86,7 +86,7 @@ def search():
     location_args = args.pop('locations', None)
 
     if location_args is not None:
-        location_list = [word.strip() for word in location_args.split(',')]
+        location_list = [word.strip() for word in location_args.split(' ')]
         for location in location_list:
             urls, weight = ortdao.getUrlfromKey(location)
             logger.info("Location URLs found: " + str(urls))
@@ -117,7 +117,7 @@ def search():
 
     word_args = args.pop('words', None)
     if word_args is not None:
-        word_list = [word.strip() for word in word_args.split(',')]
+        word_list = [word.strip() for word in word_args.split(' ')]
         for word in word_list:
             urls, weight = wortdao.getUrlsAndCountsfromKey(word)
             logger.info("word URLs found: " + str(urls))
