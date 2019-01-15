@@ -55,7 +55,7 @@ def search():
     location_args = args.pop('districts', None)
 
     if location_args is not None:
-        location_list = [word.strip() for word in location_args.split(' ')]
+        location_list = [word.strip() for word in location_args.split(',')]
         for location in location_list:
             urls, weight = ortdao.getUrlfromKey(location)
             logger.info("Location URLs found: " + str(urls))
@@ -105,10 +105,11 @@ def search():
     ] if url_set != None]
 
     matched_urls = set()
-    if len(url_sets) > 2:
+    if len(url_sets) >= 2:
         matched_urls = url_sets[0]
-        for url_set in url_sets[1:]:
+        for url_set in url_sets[1:-1]:
             matched_urls = matched_urls.intersection(url_set)
+
     elif len(url_sets) == 1:
         matched_urls = url_sets[0]
 
