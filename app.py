@@ -124,7 +124,7 @@ def search():
         "text": pagedetails.text,
         "date": pagedetails.date,
         "nr": pagedetails.nr,
-        "location": pagedetails.location,
+        "district": pagedetails.location,
     } for pagedetails in pagedetails_list])
 
 def loadDaosWithDefaultConfig():
