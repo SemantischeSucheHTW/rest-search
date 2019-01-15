@@ -52,7 +52,7 @@ def search():
     matched_zeit_urls = None
     matched_wort_urls = None
 
-    location_args = args.pop('locations', None)
+    location_args = args.pop('districts', None)
 
     if location_args is not None:
         location_list = [word.strip() for word in location_args.split(' ')]
@@ -87,7 +87,7 @@ def search():
             #    matched_urls.add(url)
             #    logger.info("Append URL " + str(url) + " for FROM " + from_date)
 
-    word_args = args.pop('words', None)
+    word_args = args.pop('q', None)
     if word_args is not None:
         word_list = [word.strip() for word in word_args.split(' ')]
         for word in word_list:
@@ -105,12 +105,12 @@ def search():
     ] if url_set != None]
 
     matched_urls = set()
-    if len(url_set) > 2:
+    if len(url_sets) > 2:
         matched_urls = url_sets[0]
         for url_set in url_sets[1:]:
             matched_urls = matched_urls.intersection(url_set)
-    else if len(url_set) == 1:
-        matched_urls = url_set[0]
+    elif len(url_sets) == 1:
+        matched_urls = url_sets[0]
 
     pagedetails_list = [pagedetailsdao.getPageDetails(url) for url in matched_urls]
 
