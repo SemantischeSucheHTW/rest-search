@@ -56,7 +56,7 @@ def search():
 
     if location_args is not None:
         matched_location_urls = set()
-        location_list = [word.strip() for word in location_args.split(',')]
+        location_list = [word.strip() for word in location_args.split('+')]
         for location in location_list:
             logger.info("looking for location" + location)
             urls, weight = ortdao.getUrlfromKey(location)
