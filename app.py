@@ -104,9 +104,13 @@ def search():
         matched_wort_urls
     ] if url_set != None]
 
-    matched_urls = url_sets[0]
-    for url_set in url_sets[1:]:
-        matched_urls = matched_urls.intersection(url_set)
+    matched_urls = set()
+    if len(url_set) > 2:
+        matched_urls = url_sets[0]
+        for url_set in url_sets[1:]:
+            matched_urls = matched_urls.intersection(url_set)
+    else if len(url_set) == 1:
+        matched_urls = url_set[0]
 
     pagedetails_list = [pagedetailsdao.getPageDetails(url) for url in matched_urls]
 
