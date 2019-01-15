@@ -1,6 +1,6 @@
 FROM python:3.7-stretch
 
-RUN pip install pymongo flask
+RUN pip install pymongo flask flask-cors
 
 RUN mkdir /rest-search
 WORKDIR /rest-search
@@ -24,7 +24,7 @@ ENV MONGODB_USERNAME genericparser
 ENV MONGODB_PASSWORD genericparser
 
 ENV FLASK_HOST 0.0.0.0
-ENV FLASK_PORT 8080
+ENV FLASK_PORT 8181
 
 ENV DEBUG true
 
