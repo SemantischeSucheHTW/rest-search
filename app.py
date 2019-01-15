@@ -55,11 +55,14 @@ def search():
     location_args = args.pop('districts', None)
 
     if location_args is not None:
+        matched_location_urls = set()
         location_list = [word.strip() for word in location_args.split(',')]
         for location in location_list:
+            logger.info("looking for location" + location)
             urls, weight = ortdao.getUrlfromKey(location)
             logger.info("Location URLs found: " + str(urls))
-            matched_location_urls = set(urls)
+            for url in urls:
+                matched_location_urls.add(url)
             #for url in urls:
             #    matched_urls.add(url)
             #    logger.info("Append URL " + str(url) + " for Location " + location)
@@ -89,11 +92,14 @@ def search():
 
     word_args = args.pop('q', None)
     if word_args is not None:
-        word_list = [word.strip() for word in word_args.split(' ')]
+        matched_wort_urls = set()
+        word_list = [word.strip() for word in word_args.split('+')]
         for word in word_list:
+            logger.info("Looking for "+word)
             urls_counts = wortdao.getUrlsAndCountsfromKey(word)
             logger.info("word URLs found: " + str(urls_counts))
-            matched_wort_urls = set([url for url, counts in urls_counts])
+            for url, counts in urls_counts:
+                matched_wort_urls.add(url)
             #for url, ignored_count in urls_counts:
             #    matched_urls.add(url)
             #    logger.info("Append URL " + str(url) + " for word " + word)
@@ -105,17 +111,22 @@ def search():
     ] if url_set != None]
 
     matched_urls = set()
+    logger.info(f"len: {len(matched_urls)}")
+
     if len(url_sets) >= 2:
         matched_urls = url_sets[0]
-        for url_set in url_sets[1:-1]:
+        logger.info(f"len: {len(matched_urls)}")
+        for url_set in url_sets[1:]:
+            logger.info(f"new: {len(url_set)}")
             matched_urls = matched_urls.intersection(url_set)
+            logger.info(f"len: {len(matched_urls)}")
 
     elif len(url_sets) == 1:
         matched_urls = url_sets[0]
 
     pagedetails_list = [pagedetailsdao.getPageDetails(url) for url in matched_urls]
 
-    logger.info("Response " + str(pagedetails_list))
+    logger.info(f"Responding with {len(pagedetails_list)} pagedetails")
 
     # rdd_url_and_text = rdd_intersect.map(lambda x: (x, pagedetailsdao.getText(x)))
 
