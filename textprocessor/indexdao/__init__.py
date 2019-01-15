@@ -1,1 +1,0 @@
-from textprocessor.indexdao import Index

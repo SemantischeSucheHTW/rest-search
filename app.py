@@ -1,38 +1,14 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
-from pyspark import SparkConf, SparkContext  # 2.3.2
+
 import os
 import logging
 
-from indexupdater.indexdao.ortsIndexdao import OrtsIndexDao
-from indexupdater.indexdao.zeitIndexdao import ZeitIndexDao
-from textprocessor.textdao.mongodbdao import MongoDBTextDao
-from textprocessor.indexdao.mongodbwortindexdao import MongoDBWortIndexDao
-
-config_ortindex = {}
-config_ortindex['host'] = "abteilung6.com"
-config_ortindex['port'] = 27017
-config_ortindex['db'] = 'semantische'
-config_ortindex['ortsindex_collection'] = 'ortsindexe'
-
-config_zeitindex = {}
-config_zeitindex['host'] = "abteilung6.com"
-config_zeitindex['port'] = 27017  # mongodb default port
-config_zeitindex['db'] = 'semantische'  # which database
-config_zeitindex['zeitindex_collection'] = 'zeitindexe'  # which collection
-
-config_textindex = {}
-config_textindex['host'] = "abteilung6.com"
-config_textindex['port'] = 27017  # mongodb default port
-config_textindex['db'] = 'semantische'  # which database
-config_textindex['pagedetails_collection'] = 'pagedetails'  # which collection
-
-config_wortindex = {}
-config_wortindex['host'] = "abteilung6.com"
-config_wortindex['port'] = 27017  # mongodb default port
-config_wortindex['db'] = 'semantische'  # which database
-config_wortindex['wordindex_collection'] = 'wortindexe'  # which collection
+from indexdao.ortsIndexdao import OrtsIndexDao
+from indexdao.zeitIndexdao import ZeitIndexDao
+from indexdao.mongodbwortindexdao import MongoDBWortIndexDao
+from pagedetailsdao.mongodbdao import MongoDBPageDetailsDao
 
 # create logger
 logger = logging.getLogger('rest-search')
@@ -53,26 +29,13 @@ logger.addHandler(ch)
 
 app = Flask(__name__)
 
-ortdao = OrtsIndexDao(config_ortindex)
-zeitdao = ZeitIndexDao(config_zeitindex)
-textdao = MongoDBTextDao(config_textindex)
-wortdao = MongoDBWortIndexDao(config_wortindex)
-
-os.environ['HADOOP_HOME'] = "C:\\hadoop"
-
-conf = (SparkConf()
-        .setMaster("local")
-        .setAppName("My app")
-        .set("spark.executor.memory", "1g"))
-
-sc = SparkContext(conf=conf)
-
+ortdao = None
+zeitdao = None
+pagedetailsdao = None
+wortdao = None
 
 @app.route('/reports', methods=['GET'])
 def search():
-    time_urls = []
-    location_urls = []
-    word_urls = []
 
     args = request.args.to_dict()
     logger.info("New Request with Arguments: " + str(args))
@@ -83,6 +46,10 @@ def search():
         pass
     '''
 
+    matched_location_urls = None
+    matched_zeit_urls = None
+    matched_wort_urls = None
+
     location_args = args.pop('locations', None)
 
     if location_args is not None:
@@ -90,9 +57,10 @@ def search():
         for location in location_list:
             urls, weight = ortdao.getUrlfromKey(location)
             logger.info("Location URLs found: " + str(urls))
-            for url in urls:
-                location_urls.append((url[0], url[0]))
-                logger.info("Append URL " + str(url) + " for Location " + location)
+            matched_location_urls = set(urls)
+            #for url in urls:
+            #    matched_urls.add(url)
+            #    logger.info("Append URL " + str(url) + " for Location " + location)
 
     from_args = args.pop('from', None)
     to_args = args.pop('to', None)
@@ -102,38 +70,87 @@ def search():
         to_list = [word.strip() for word in to_args.split(',')]
         urls, weight = zeitdao.getUrlfromKey(from_list[0], to_list[0])
         logger.info("FROM_TO URLs found: " + str(urls))
-        for url in urls:
-            logger.info("Append URL " + str(urls) + " for FROM_TO " + from_list[0] + " - " + to_list[0])
-            time_urls.append((url[0], url[0]))
+        matched_zeit_urls = set(urls)
+        #for url in urls:
+        #    matched_urls.add(url)
+        #    logger.info("Append URL " + str(urls) + " for FROM_TO " + from_list[0] + " - " + to_list[0])
 
     elif from_args is not None and to_args is None:
         from_list = [word.strip() for word in from_args.split(',')]
         for from_date in from_list:
             urls, weight = zeitdao.getUrlfromKey(from_date)
             logger.info("TO URLs found: " + str(urls))
-            for url in urls:
-                logger.info("Append URL " + str(url) + " for FROM " + from_date)
-                time_urls.append((url[0], url[0]))
+            matched_zeit_urls = set(urls)
+            #for url in urls:
+            #    matched_urls.add(url)
+            #    logger.info("Append URL " + str(url) + " for FROM " + from_date)
 
     word_args = args.pop('words', None)
     if word_args is not None:
         word_list = [word.strip() for word in word_args.split(' ')]
         for word in word_list:
-            urls, weight = wortdao.getUrlsAndCountsfromKey(word)
-            logger.info("word URLs found: " + str(urls))
-            for url in urls:
-                logger.info("Append URL " + str(url) + " for word " + word)
-                word_urls.append((url[0], url[0]))
+            urls_counts = wortdao.getUrlsAndCountsfromKey(word)
+            logger.info("word URLs found: " + str(urls_counts))
+            matched_wort_urls = set([url for url, counts in urls_counts])
+            #for url, ignored_count in urls_counts:
+            #    matched_urls.add(url)
+            #    logger.info("Append URL " + str(url) + " for word " + word)
 
-    rdd_locations = sc.parallelize(location_urls)
-    rdd_time = sc.parallelize(time_urls)
-    rdd_intersect = rdd_locations.intersection(rdd_time).collect()
-    logger.info("Response " + str(rdd_intersect))
+    url_sets = [url_set for url_set in [
+        matched_location_urls,
+        matched_zeit_urls,
+        matched_wort_urls
+    ] if url_set != None]
 
-    # rdd_url_and_text = rdd_intersect.map(lambda x: (x, textdao.getText(x)))
+    matched_urls = url_sets[0]
+    for url_set in url_sets[1:]:
+        matched_urls = matched_urls.intersection(url_set)
 
-    return jsonify(rdd_intersect)
+    pagedetails_list = [pagedetailsdao.getPageDetails(url) for url in matched_urls]
 
+    logger.info("Response " + str(pagedetails_list))
+
+    # rdd_url_and_text = rdd_intersect.map(lambda x: (x, pagedetailsdao.getText(x)))
+
+    return jsonify([{
+        "link": pagedetails.url,
+        "title": pagedetails.title,
+        "text": pagedetails.text,
+        "date": pagedetails.date,
+        "nr": pagedetails.nr,
+        "location": pagedetails.location,
+    } for pagedetails in pagedetails_list])
+
+def loadDaosWithDefaultConfig():
+    ortsIndexdao = OrtsIndexDao({
+        'host': "abteilung6.com",
+        'port': 27017,
+        'db': 'semantische',
+        'ortsindex_collection': 'ortsindexe',
+    })
+
+    zeitIndexdao = ZeitIndexDao({
+        'host': "abteilung6.com",
+        'port': 27017,  # mongodb default port,
+        'db': 'semantische',  # which database,
+        'zeitindex_collection': 'zeitindexe'  # which collection,
+    })
+
+    pagedetailsdao = MongoDBTextDao({
+        'host': "abteilung6.com",
+        'port': 27017,  # mongodb default port,
+        'db': 'semantische',  # which database,
+        'pagedetails_collection': 'pagedetails'  # which collection,
+    })
+
+    wortdao = MongoDBPageDetailsDao({
+        'host': "abteilung6.com",
+        'port': 27017,  # mongodb default port,
+        'db': 'semantische',  # which database,
+        'wordindex_collection': 'pagedetails'  # which collection,
+    })
 
 if __name__ == '__main__':
+    loadDaosWithDefaultConfig()
     app.run(host='0.0.0.0', port=5000)
+
