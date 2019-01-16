@@ -11,6 +11,8 @@ from indexdao.zeitIndexdao import ZeitIndexDao
 from indexdao.mongodbwortindexdao import MongoDBWortIndexDao
 from pagedetailsdao.mongodbdao import MongoDBPageDetailsDao
 
+import datetime
+
 # create logger
 logger = logging.getLogger('rest-search')
 logger.setLevel(logging.INFO)
@@ -71,9 +73,9 @@ def search():
     to_args = args.pop('to', None)
 
     if from_args is not None and to_args is not None:
-        from_list = [word.strip() for word in from_args.split(',')]
-        to_list = [word.strip() for word in to_args.split(',')]
-        urls, weight = zeitdao.getUrlfromKey(from_list[0], to_list[0])
+        from_date = datetime.datetime.strptime(from_args, "%Y-%m-%d")
+        to_date = datetime.datetime.strptime(to_args, "%Y-%m-%d")
+        urls, weight = zeitdao.getUrlfromKey( from_date, to_date )
         logger.info("FROM_TO URLs found: " + str(urls))
         matched_zeit_urls = set(urls)
         #for url in urls:
@@ -83,8 +85,10 @@ def search():
     elif from_args is not None and to_args is None:
         from_list = [word.strip() for word in from_args.split(',')]
         for from_date in from_list:
-            urls, weight = zeitdao.getUrlfromKey(from_date)
-            logger.info("TO URLs found: " + str(urls))
+            from_date = datetime.datetime.strptime(from_date, "%Y-%m-%d")
+            logger.info(f"Looking for: {from_date}")
+            urls, weight = zeitdao.getUrlfromKey( from_date )
+            logger.info("FROM URLs found: " + str(urls))
             matched_zeit_urls = set(urls)
             #for url in urls:
             #    matched_urls.add(url)
