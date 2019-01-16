@@ -138,7 +138,7 @@ def search():
         "link": pagedetails.url,
         "title": pagedetails.title,
         "text": pagedetails.text,
-        "date": pagedetails.date,
+        "date": pagedetails.date.strftime("%Y-%m-%d"),
         "nr": pagedetails.nr,
         "district": pagedetails.location,
     } for pagedetails in pagedetails_list])
