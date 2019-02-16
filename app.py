@@ -11,6 +11,8 @@ from indexdao.zeitIndexdao import ZeitIndexDao
 from indexdao.mongodbwortindexdao import MongoDBWortIndexDao
 from pagedetailsdao.mongodbdao import MongoDBPageDetailsDao
 
+from spacy_preprocessing.preprocess import Preprocess
+
 import datetime
 
 # create logger
@@ -38,9 +40,9 @@ zeitdao = None
 pagedetailsdao = None
 wortdao = None
 
+
 @app.route('/reports', methods=['GET'])
 def search():
-
     args = request.args.to_dict()
     logger.info("New Request with Arguments: " + str(args))
 
@@ -75,10 +77,10 @@ def search():
     if from_args is not None and to_args is not None:
         from_date = datetime.datetime.strptime(from_args, "%Y-%m-%d")
         to_date = datetime.datetime.strptime(to_args, "%Y-%m-%d")
-        urls, weight = zeitdao.getUrlfromKey( from_date, to_date )
+        urls, weight = zeitdao.getUrlfromKey(from_date, to_date)
         logger.info("FROM_TO URLs found: " + str(urls))
         matched_zeit_urls = set(urls)
-        #for url in urls:
+        # for url in urls:
         #    matched_urls.add(url)
         #    logger.info("Append URL " + str(urls) + " for FROM_TO " + from_list[0] + " - " + to_list[0])
 
@@ -87,26 +89,32 @@ def search():
         for from_date in from_list:
             from_date = datetime.datetime.strptime(from_date, "%Y-%m-%d")
             logger.info(f"Looking for: {from_date}")
-            urls, weight = zeitdao.getUrlfromKey( from_date )
+            urls, weight = zeitdao.getUrlfromKey(from_date)
             logger.info("FROM URLs found: " + str(urls))
             matched_zeit_urls = set(urls)
-            #for url in urls:
+            # for url in urls:
             #    matched_urls.add(url)
             #    logger.info("Append URL " + str(url) + " for FROM " + from_date)
 
     word_args = args.pop('q', None)
     if word_args is not None:
         matched_wort_urls = set()
-        word_list = [word.strip() for word in word_args.split('+')]
-        for word in word_list:
-            logger.info("Looking for "+word)
+
+        lemma_words = Preprocess(word_args.replace("+", " ")) \
+            .preprocess(sentence_split=False, with_pos=False, do_lemma=True)
+
+        logger.debug(f"Lemmatized '{word_args}' to '{lemma_words}'")
+
+        for word in lemma_words:
+            logger.info("Looking for " + word)
             urls_counts = wortdao.getUrlsAndCountsfromKey(word)
-            logger.info("word URLs found: " + str(urls_counts))
+            logger.info(f"{len(urls_counts)} URLs matching {word} found.")
+
             for url, counts in urls_counts:
                 matched_wort_urls.add(url)
-            #for url, ignored_count in urls_counts:
-            #    matched_urls.add(url)
-            #    logger.info("Append URL " + str(url) + " for word " + word)
+                # for url, ignored_count in urls_counts:
+                #    matched_urls.add(url)
+                #    logger.info("Append URL " + str(url) + " for word " + word)
 
     url_sets = [url_set for url_set in [
         matched_location_urls,
@@ -143,6 +151,7 @@ def search():
         "district": pagedetails.location,
     } for pagedetails in pagedetails_list])
 
+
 def loadDaosWithDefaultConfig():
     ortsIndexdao = OrtsIndexDao({
         'host': "abteilung6.com",
@@ -172,7 +181,7 @@ def loadDaosWithDefaultConfig():
         'wordindex_collection': 'pagedetails'  # which collection,
     })
 
+
 if __name__ == '__main__':
     loadDaosWithDefaultConfig()
     app.run(host='0.0.0.0', port=5000)
-
